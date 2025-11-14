@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 from .my_tools import ask_for_clarification, get_calendar_appointments, get_connections, think
 
-# comment for test commit
 class GlobalContext(BaseModel):
     """
     This class holds the global context for the agent, including the current date and time.
