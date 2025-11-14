@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 from agents import Agent, RunContextWrapper, Runner, TResponseInputItem
 from pydantic import BaseModel
 
-from .my_tools import ask_for_clarification, get_connections, think
+from .my_tools import ask_for_clarification, get_calendar_appointments, get_connections, think
 
 
 class GlobalContext(BaseModel):
@@ -41,8 +41,11 @@ def scheduling_agent_system_prompt(context: RunContextWrapper[GlobalContext], ag
     )
 
 
-# TODO: Implement the scheduling_agent with the provided system prompt and tools
-scheduling_agent = None # Agent(...)
+scheduling_agent = Agent(
+    name="Scheduling Agent",
+    instructions=scheduling_agent_system_prompt,
+    tools=[think, ask_for_clarification, get_calendar_appointments],
+)
 
 
 def public_transport_agent_system_prompt(
@@ -94,8 +97,25 @@ When referring to an appointment, always mention the name of the appointment.
 Answer in a friendly and helpful manner.
 """
 
-# TODO: Implement the triage_agent with the provided system prompt and tool wrappers
-triage_agent = None
+triage_agent = Agent(
+    name="Triage agent",
+    instructions=triage_agent_system_prompt,
+    tools=[
+        think,
+        ask_for_clarification,
+        public_transport_agent.as_tool(
+            tool_name="find_transport_routes",
+            tool_description="Find public transport routes between two locations for a specific date and time",
+        ),
+        scheduling_agent.as_tool(
+            tool_name="select_best_connection",
+            tool_description=(
+                "Select the optimal transport connection by first getting the user's appointments and "
+                "then determine the connection that best fits with the user's calendar appointments"
+            ),
+        ),
+    ]
+)
 
 
 async def execute_agent(user_input: str, history: List[Dict[str, str]]) -> tuple[Any, list[TResponseInputItem]]:

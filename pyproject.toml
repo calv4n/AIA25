@@ -8,6 +8,7 @@ dependencies = [
     "chainlit>=2.7.2",
     "ics>=0.7.2",
     "mlflow>=3.3.2",
+    "ollama>=0.6.0",
     "openai>=1.106.1",
     "openai-agents>=0.2.11",
     "python-dateutil>=2.9.0.post0",

@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from textwrap import dedent
 from typing import Any, Dict, List
@@ -6,6 +7,7 @@ from agents import Agent, RunContextWrapper, Runner, TResponseInputItem
 from pydantic import BaseModel
 
 from .my_tools import (
+    MCPServerRepository,
     ask_for_clarification,
     get_calendar_appointments,
     get_connections,
@@ -110,9 +112,26 @@ class OpenStreetMapAgent(Agent):
             • The agent constructor is `Agent(name, instructions, tools, mcp_servers, model)`.
             • Keep the method `@classmethod` and return `cls(...)`, this will create an instance of the agent.
         """
-        # === Your code here ================================================= #
-        pass
-        # ==================================================================== #
+        import asyncio
+        
+        repo = await MCPServerRepository.get_instance()
+        
+        osm_server = repo.get_server("openstreetmap")
+        
+        mcp_servers = [osm_server] if osm_server else []
+        return cls(
+            name="OpenStreetMap Agent",
+            instructions=dedent(
+                """You are a geographical location assistant that helps users explore locations,
+                find directions, and discover nearby points of interest. You have access to OpenStreetMap
+                tools to provide accurate geographical information and routing suggestions.
+                
+                Use the explore_area, geocode_address, and get_route_directions tools to help users
+                with their location-based queries."""
+            ),
+            tools=[think, ask_for_clarification],
+            mcp_servers=mcp_servers,
+        )
 
 
 triage_agent_system_prompt = """
@@ -149,13 +168,10 @@ triage_agent = Agent(
                 "then determine the connection that best fits with the user's calendar appointments"
             ),
         ),
-        # TODO:
-        #   After you finish implementing OpenStreetMapAgent.setup(), add it below like so:
-        #
-        #   asyncio.run(OpenStreetMapAgent.setup()).as_tool(
-        #       tool_name="...",
-        #       tool_description="...",
-        #   ),
+        asyncio.run(OpenStreetMapAgent.setup()).as_tool(
+            tool_name="explore_locations",
+            tool_description="Explore geographical locations, find directions, and discover nearby points of interest using OpenStreetMap data",
+        ),
     ],
 )
 
